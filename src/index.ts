@@ -8,7 +8,7 @@ import dns from 'dns/promises';
 import net from 'net';
 
 const app = express();
-const PORT = 3001;
+const PORT = 7001;
 
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const FALLBACK_IMAGE = path.join(process.cwd(), 'assets/doctor_default.png');
