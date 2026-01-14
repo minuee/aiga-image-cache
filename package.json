@@ -1,0 +1,34 @@
+{
+  "name": "aiga-image-cache",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minuee/aiga-image-cache.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/minuee/aiga-image-cache/issues"
+  },
+  "homepage": "https://github.com/minuee/aiga-image-cache#readme",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "express": "^5.2.1",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
