@@ -84,7 +84,8 @@ app.get('/', async (req, res) => {
       .update(`${url}_${w || ''}_${h || ''}`)
       .digest('hex');
 
-    const filePath = path.join(CACHE_DIR, `${hash}.webp`);
+    const cacheDir = path.join(CACHE_DIR, hash.substring(0, 2), hash.substring(2, 4));
+    const filePath = path.join(cacheDir, `${hash}.webp`);
 
     // 📦 캐시 HIT
     if (fs.existsSync(filePath)) {
@@ -116,7 +117,7 @@ app.get('/', async (req, res) => {
       .toBuffer();
 
     // 💾 캐시 저장
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    fs.mkdirSync(cacheDir, { recursive: true });
     fs.writeFileSync(filePath, buffer);
 
     setCacheHeaders(res, hash);
