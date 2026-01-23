@@ -51,14 +51,14 @@ function setCacheHeaders(res: express.Response, etag: string) {
   res.setHeader('ETag', etag);
 }
 
-app.get('/cache', async(req,res) => {
+app.get('/check', async(req,res) => {
   return res.status(200).send('image cache');
 })
-app.get('/cache/health', async(req,res) => {
+app.get('/health', async(req,res) => {
     return res.status(200).send('ok');
 })
 
-app.get('/cache/img', async (req, res) => {
+app.get('/', async (req, res) => {
   const { url, w, h } = req.query as any;
 
   if (!url) {
