@@ -132,10 +132,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+
+app.listen(PORT, () => {
   console.log(`✅ Image server running on port ${PORT}`);
 });
-/* app.listen(PORT, () => {
-  console.log(`✅ Image server running on port ${PORT}`);
-});
- */
