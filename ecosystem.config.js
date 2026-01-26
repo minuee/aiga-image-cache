@@ -2,7 +2,7 @@ module.exports = {
     apps: [
       {
         name: "aiga-image-cache",
-        script: "dist/main.js",
+        script: "dist/index.js",
         watch: false,
         exec_mode: "cluster",
         instances: 0,
