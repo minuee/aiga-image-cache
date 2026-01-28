@@ -98,6 +98,7 @@ app.get('/', async (req, res) => {
       responseType: 'arraybuffer',
       timeout: 5000,
       maxContentLength: 5 * 1024 * 1024,
+      maxRedirects: 5, // ⭐ 핵심
       validateStatus: status => status >= 200 && status < 300,
     });
 
