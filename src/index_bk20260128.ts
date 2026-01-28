@@ -43,36 +43,23 @@ async function isPrivateHost(hostname: string): Promise<boolean> {
 }
 
 /**
- * ✅ 캐시 HIT용 헤더 (브라우저 캐시 허용)
+ * 공통 캐시 헤더
  */
 function setCacheHeaders(res: express.Response, etag: string) {
   res.setHeader('Content-Type', 'image/webp');
-  res.setHeader(
-    'Cache-Control',
-    'public, max-age=86400, stale-while-revalidate=604800'
-  );
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.setHeader('ETag', etag);
 }
 
-/**
- * ❌ fallback 전용 헤더 (절대 캐시 금지)
- */
-function setNoCacheHeaders(res: express.Response) {
-  res.setHeader('Content-Type', 'image/webp');
-  res.setHeader(
-    'Cache-Control',
-    'no-store, no-cache, must-revalidate, proxy-revalidate'
-  );
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-}
+app.get('/check', async(req,res) => {
+  return res.status(200).send('image cache');
+})
+app.get('/health', async(req,res) => {
+    return res.status(200).send('ok');
+})
 
-app.get('/health', (_req, res) => res.send('ok'));
-
-/**
- * 📸 이미지 캐시 엔드포인트
- * /cimg?url=...&w=300&h=300
- */
 app.get('/', async (req, res) => {
   const { url, w, h } = req.query as any;
 
@@ -81,47 +68,40 @@ app.get('/', async (req, res) => {
   }
 
   try {
-    // 🔧 URL 정규화 (// 제거)
-    const normalizedUrl = url.replace(/([^:]\/)\/+/g, '$1');
-    const targetUrl = new URL(normalizedUrl);
+    const targetUrl = new URL(url);
 
+    // protocol 제한
     if (!['http:', 'https:'].includes(targetUrl.protocol)) {
       throw new Error('invalid protocol');
     }
 
+    // 사설망 차단
     if (await isPrivateHost(targetUrl.hostname)) {
       throw new Error('private network access denied');
     }
 
-    // 🔑 캐시 키
+    // 캐시 키
     const hash = crypto
       .createHash('md5')
-      .update(`${normalizedUrl}_${w || ''}_${h || ''}`)
+      .update(`${url}_${w || ''}_${h || ''}`)
       .digest('hex');
-
-    const cacheDir = path.join(
-      CACHE_DIR,
-      hash.substring(0, 2),
-      hash.substring(2, 4)
-    );
+      console.log(`hash: ${hash}`)
+    const cacheDir = path.join(CACHE_DIR, hash.substring(0, 2), hash.substring(2, 4));
     const filePath = path.join(cacheDir, `${hash}.webp`);
-
+    console.log(`filePath: ${filePath}`)
     // 📦 캐시 HIT
     if (fs.existsSync(filePath)) {
+      console.log("📦 캐시 HIT")
       setCacheHeaders(res, hash);
       return res.sendFile(filePath);
     }
 
     // 📥 외부 이미지 요청
-    const response = await axios.get(normalizedUrl, {
+    const response = await axios.get(url, {
       responseType: 'arraybuffer',
-      timeout: 15000,
-      maxRedirects: 5,
+      timeout: 5000,
       maxContentLength: 5 * 1024 * 1024,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (ImageCacheServer)',
-        'Accept': 'image/*,*/*;q=0.8',
-      },
+      maxRedirects: 5, // ⭐ 핵심
       validateStatus: status => status >= 200 && status < 300,
     });
 
@@ -130,7 +110,7 @@ app.get('/', async (req, res) => {
       throw new Error('not an image');
     }
 
-    // 🖼 이미지 리사이징
+    // 🖼 이미지 처리
     const buffer = await sharp(response.data)
       .resize(
         w ? Number(w) : undefined,
@@ -145,16 +125,20 @@ app.get('/', async (req, res) => {
     fs.writeFileSync(filePath, buffer);
 
     setCacheHeaders(res, hash);
-    return res.send(buffer);
-
+    res.send(buffer);
   } catch (err) {
     console.warn('[IMAGE FALLBACK]', url);
 
-    setNoCacheHeaders(res);
+    // ❗ 실패 시 기본 이미지 반환 (캐싱 ❌)
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     return res.sendFile(FALLBACK_IMAGE);
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Image cache server running on port ${PORT}`);
+
+app.listen(PORT, () => {
+  console.log(`✅ Image server running on port ${PORT}`);
 });
